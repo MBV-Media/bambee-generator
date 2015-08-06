@@ -1,8 +1,15 @@
 {
   "name": "generator-bambee",
-  "version": "0.1.0",
-  "description": "Generator for Bambee Wordpress Theme",
-  "author": "R4c00n <marcel.kempf93@gmail.com>",
+  "version": "1.0.0",
+  "description": "A generator for Yeoman to customize the Bambee WordPress Theme.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MBV-Media/generator-bambee"
+  },
+  "author": {
+    "name": "R4c00n",
+    "email": "marcel.kempf93@gmail.com"
+  },
   "license": "MIT",
   "main": "app/index.js",
   "files": [
