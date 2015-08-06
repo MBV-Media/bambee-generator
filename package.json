@@ -1,0 +1,24 @@
+{
+  "name": "generator-bambee",
+  "version": "0.1.0",
+  "description": "Generator for Bambee Wordpress Theme",
+  "author": "R4c00n <marcel.kempf93@gmail.com>",
+  "license": "MIT",
+  "main": "app/index.js",
+  "files": [
+    "app"
+  ],
+  "keywords": [
+    "yeoman-generator"
+  ],
+  "dependencies": {
+    "adm-zip": "^0.4.7",
+    "fs": "0.0.2",
+    "request": "^2.60.0",
+    "rimraf": "^2.4.2",
+    "underscore.string": "^3.1.1",
+    "util": "^0.10.3",
+    "yeoman-generator": "^0.20.2",
+    "yosay": "^1.0.5"
+  }
+}
