@@ -1,7 +1,7 @@
 /**
  * @name generator-bambee
  * @author R4c00n <marcel.kempf93@gmail.com>
- * @version 1.0.0
+ * @version 1.0.5
  * @license MIT
  * @description
  *   Yeoman generator for downloading the Bambee WordPress Theme from GitHub,
@@ -13,6 +13,9 @@
 'use strict';
 
 var yeoman = require('yeoman-generator'),
+    updateNotifier = require('update-notifier'),
+    pkg = require('../package.json'),
+    notifier = updateNotifier({pkg: pkg}),
     util = require('util'),
     _ = require('underscore.string'),
     yosay = require('yosay'),
@@ -23,6 +26,9 @@ var yeoman = require('yeoman-generator'),
     Replacer = require('./replacer'),    
     executeCommand = require('./execute-command.js'),
     BambeeGenerator;
+
+notifier.notify();
+console.log(notifier.update);
 
 /**
  * @class
