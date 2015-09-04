@@ -13,22 +13,25 @@
 'use strict';
 
 var yeoman = require('yeoman-generator'),
-    updateNotifier = require('update-notifier'),
-    pkg = require('../package.json'),
-    notifier = updateNotifier({pkg: pkg}),
-    util = require('util'),
-    _ = require('underscore.string'),
-    yosay = require('yosay'),
-    fs = require('fs'),
-    request = require('request'),
-    admzip = require('adm-zip'),
-    rmdir = require('rimraf'),
-    Replacer = require('./replacer'),    
-    executeCommand = require('./execute-command.js'),
-    BambeeGenerator;
+  updateNotifier = require('update-notifier'),
+  pkg = require('../package.json'),
+  notifier = updateNotifier({pkg: pkg}),
+  util = require('util'),
+  _ = require('underscore.string'),
+  yosay = require('yosay'),
+  fs = require('fs'),
+  request = require('request'),
+  admzip = require('adm-zip'),
+  rmdir = require('rimraf'),
+  Replacer = require('./replacer'),
+  executeCommand = require('./execute-command.js'),
+  BambeeGenerator;
+
 
 notifier.notify();
-console.log(notifier.update);
+if (notifier.update) {
+  console.log(notifier.update);
+}
 
 /**
  * @class
@@ -38,32 +41,32 @@ console.log(notifier.update);
  */
 BambeeGenerator = module.exports = function BambeeGenerator(args, options) {
   var self = this;
-  
-  yeoman.generators.Base.apply(this, arguments);  
+
+  yeoman.generators.Base.apply(this, arguments);
   console.log(yosay('Hello and welcome to the Bambee WordPress theme generator'));
-  
-  this.on('end', function() {
+
+  this.on('end', function () {
     var key = null,
       execOptions;
-    
+
     // Replace strings in files
     for (key in self.files) {
       if (self.files.hasOwnProperty(key)) {
         self.files[key].replace();
       }
     }
-    
+
     // Execute installation commands
     execOptions = {
       cwd: self.siteSlug
     };
-    executeCommand('bundle install', execOptions, function() {
-      executeCommand('npm install', execOptions, function() {
-        executeCommand('bower install', execOptions, function() {
+    executeCommand('bundle install', execOptions, function () {
+      executeCommand('npm install', execOptions, function () {
+        executeCommand('bower install', execOptions, function () {
           execOptions.cwd = self.siteSlug + '/src';
-          executeCommand('composer install', execOptions, function() {
-            console.log('All done!');
-          });          
+          executeCommand('composer install', execOptions, function () {
+            console.log('Bambee WordPress Theme installed successfully!');
+          });
         });
       });
     });
@@ -79,7 +82,7 @@ util.inherits(BambeeGenerator, yeoman.generators.Base);
  */
 BambeeGenerator.prototype.askFor = function askFor() {
   var cb = this.async();
-  
+
   var prompts = [
     {
       type: 'input',
@@ -147,7 +150,7 @@ BambeeGenerator.prototype.askFor = function askFor() {
     this.repositoryUrl = props.repositoryUrl;
     this.themeUrl = props.themeUrl;
     this.authorUrl = props.authorUrl;
-    
+
     this.files = {
       package: new Replacer(this.siteSlug + '/package.json', this),
       styleSCSS: new Replacer(this.siteSlug + '/src/style.scss', this)
@@ -164,26 +167,26 @@ BambeeGenerator.prototype.askFor = function askFor() {
  */
 BambeeGenerator.prototype.download = function download() {
   var cb = this.async(),
-      self = this;
-  
-  console.log('Downloading the Bambee WordPress theme...');  
+    self = this;
+
+  console.log('Downloading the Bambee WordPress Theme...');
   request('https://github.com/MBV-Media/Bambee-WordPress-Theme/archive/master.zip')
-  .pipe(fs.createWriteStream('plugin.zip'))
-  .on('close', function() {
-    var zip = new admzip('./plugin.zip');
-    
-    console.log('File downloaded!');    
-    zip.extractAllTo('theme_temp', true);
-    fs.rename('./theme_temp/Bambee-WordPress-Theme-master/', './' + self.siteSlug, function () {
-      rmdir('theme_temp', function (error) {
-        if (error) {
-          console.log(error);
-        }
-        cb();
+    .pipe(fs.createWriteStream('plugin.zip'))
+    .on('close', function () {
+      var zip = new admzip('./plugin.zip');
+
+      console.log('File downloaded!');
+      zip.extractAllTo('theme_temp', true);
+      fs.rename('./theme_temp/Bambee-WordPress-Theme-master/', './' + self.siteSlug, function () {
+        rmdir('theme_temp', function (error) {
+          if (error) {
+            console.log(error);
+          }
+          cb();
+        });
       });
+      fs.unlink('plugin.zip');
     });
-    fs.unlink('plugin.zip');
-  });
 };
 
 /**
@@ -194,29 +197,29 @@ BambeeGenerator.prototype.download = function download() {
  */
 BambeeGenerator.prototype.setPackage = function setPackage() {
   var packageJSON = this.files.package;
-  
+
   packageJSON.add(
-    /\"name\"\: \"Bambee\"/, 
+    /\"name\"\: \"Bambee\"/,
     '"name": "' + this.siteSlug + '"'
   );
   packageJSON.add(
-    /\"description\"\: \"Boilerplate for WordPress theme developement.\"/, 
+    /\"description\"\: \"Boilerplate for WordPress theme developement.\"/,
     '"description": "' + this.description + '"'
   );
   packageJSON.add(
-    /\"type\"\: \"git\"/, 
+    /\"type\"\: \"git\"/,
     '"type": "' + this.repositoryType + '"'
   );
   packageJSON.add(
-    /\"url\"\: \"https:\/\/github.com\/MBV-Media\/Bambee\-WordPress\-Theme\"/, 
+    /\"url\"\: \"https:\/\/github.com\/MBV-Media\/Bambee\-WordPress\-Theme\"/,
     '"url": "' + this.repositoryUrl + '"'
   );
   packageJSON.add(
-    /\"author\"\: \"MBV-Media <info@mbv-media.com>\"/, 
+    /\"author\"\: \"MBV-Media <info@mbv-media.com>\"/,
     '"author": "' + this.author + '"'
   );
   packageJSON.add(
-    /\"license\"\: \"MIT\"/, 
+    /\"license\"\: \"MIT\"/,
     '"license": "' + this.license + '"'
   );
 };
@@ -229,13 +232,13 @@ BambeeGenerator.prototype.setPackage = function setPackage() {
  */
 BambeeGenerator.prototype.setStyleSCSS = function setStyleSCSS() {
   var packageJSON = this.files.styleSCSS;
-  
+
   packageJSON.add(
-    /Theme URI\: https\:\/\/github.com\/MBV-Media\/Bambee\-WordPress\-Theme/, 
+    /Theme URI\: https\:\/\/github.com\/MBV-Media\/Bambee\-WordPress\-Theme/,
     'Theme URI: ' + this.themeUrl
   );
   packageJSON.add(
-    /Author URI\: http:\/\/mbv\-media.com\//, 
+    /Author URI\: http:\/\/mbv\-media.com\//,
     'Author URI: ' + this.authorUrl
   );
 };
