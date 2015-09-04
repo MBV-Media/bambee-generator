@@ -21,6 +21,7 @@ var yeoman = require('yeoman-generator'),
   request = require('request'),
   admzip = require('adm-zip'),
   rmdir = require('rimraf'),
+  Replacer = require('../app/replacer'),
   executeCommand = require('../app/execute-command.js'),
   BambeeUpdateGenerator;
 
@@ -71,7 +72,8 @@ util.inherits(BambeeUpdateGenerator, yeoman.generators.Base);
  * @return {void}
  */
 BambeeUpdateGenerator.prototype.download = function download() {
-  var cb = this.async(),
+  var self = this,
+    cb = this.async(),
     localPkg = JSON.parse(fs.readFileSync('./package.json', 'utf8')),
     url;
 
@@ -90,6 +92,8 @@ BambeeUpdateGenerator.prototype.download = function download() {
 
       // Compare versions
       if (remotePkg.version > localPkg.version) {
+        self.localVersion = localPkg.version;
+        self.remoteVersion = remotePkg.version;
         console.log('Downloading the Bambee WordPress theme...');
 
         request('https://github.com/MBV-Media/Bambee-WordPress-Theme/archive/master.zip')
@@ -125,7 +129,8 @@ BambeeUpdateGenerator.prototype.update = function update() {
       if (error) {
         console.log(error);
       }
-    };
+    },
+    pkg;
 
   rmdir(oldLib, function (error) {
     rmdirCb(error);
@@ -139,4 +144,12 @@ BambeeUpdateGenerator.prototype.update = function update() {
   rmdir('./bower_components', rmdirCb);
   rmdir('./src/composer.lock', rmdirCb);
   rmdir('./src/vendor', rmdirCb);
+
+  // Update local Bambee WordPress Theme version
+  pkg = new Replacer('./package.json', this);
+  pkg.add(
+    '"version": "' + this.localVersion + '"',
+    '"version": "' + this.remoteVersion + '"'
+  );
+  pkg.replace();
 };
