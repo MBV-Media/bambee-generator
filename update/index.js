@@ -71,7 +71,7 @@ BambeeUpdateGenerator.prototype.download = function download() {
     url;
 
   // Check local Bambee WordPress Theme version
-  if (!localPkg.version < 1.2) {
+  if (localPkg.version < '1.2.0') {
     console.log('You need Bambee WordPress Theme Version >= 1.2 for automated updates.');
     return;
   }
