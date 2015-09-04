@@ -50,7 +50,12 @@ BambeeUpdateGenerator = module.exports = function BambeeUpdateGenerator(args, op
             cwd: 'src'
           };
           executeCommand('composer install', execOptions, function () {
-            console.log('Bambee WordPress Theme updated successfully!');
+            rmdir('./theme_temp', function(error) {
+              if (error) {
+                console.log(error);
+              }
+              console.log('Bambee WordPress Theme updated successfully!');
+            });
           });
         });
       });
@@ -134,5 +139,4 @@ BambeeUpdateGenerator.prototype.update = function update() {
   rmdir('./bower_components', rmdirCb);
   rmdir('./src/composer.lock', rmdirCb);
   rmdir('./src/vendor', rmdirCb);
-  rmdir('./theme_temp', rmdirCb);
 };
