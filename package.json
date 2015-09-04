@@ -14,7 +14,8 @@
   "main": "app/index.js",
   "files": [
     "app",
-    "loadDependencies"
+    "loadDependencies",
+    "update"
   ],
   "keywords": [
     "yeoman-generator"
