@@ -60,13 +60,11 @@ BambeeGenerator = module.exports = function BambeeGenerator(args, options) {
     execOptions = {
       cwd: self.siteSlug
     };
-    executeCommand('bundle install', execOptions, function () {
-      executeCommand('npm install', execOptions, function () {
-        executeCommand('bower install', execOptions, function () {
-          execOptions.cwd = self.siteSlug + '/src';
-          executeCommand('composer install', execOptions, function () {
-            console.log('Bambee WordPress Theme installed successfully!');
-          });
+    executeCommand('npm install', execOptions, function () {
+      executeCommand('bower install', execOptions, function () {
+        execOptions.cwd = self.siteSlug + '/src';
+        executeCommand('composer install', execOptions, function () {
+          console.log('Bambee WordPress Theme installed successfully!');
         });
       });
     });

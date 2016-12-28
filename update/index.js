@@ -44,19 +44,17 @@ BambeeUpdateGenerator = module.exports = function BambeeUpdateGenerator(args, op
 
   this.on('end', function () {
     // Execute installation commands
-    executeCommand('bundle install', function () {
-      executeCommand('npm install', function () {
-        executeCommand('bower install', function () {
-          var execOptions = {
-            cwd: 'src'
-          };
-          executeCommand('composer install', execOptions, function () {
-            rmdir('./theme_temp', function(error) {
-              if (error) {
-                console.log(error);
-              }
-              console.log('Bambee WordPress Theme updated successfully!');
-            });
+    executeCommand('npm install', function () {
+      executeCommand('bower install', function () {
+        var execOptions = {
+          cwd: 'src'
+        };
+        executeCommand('composer install', execOptions, function () {
+          rmdir('./theme_temp', function(error) {
+            if (error) {
+              console.log(error);
+            }
+            console.log('Bambee WordPress Theme updated successfully!');
           });
         });
       });
