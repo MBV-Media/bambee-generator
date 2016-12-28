@@ -45,15 +45,13 @@ util.inherits(BambeeLoadDependenciesGenerator, yeoman.generators.Base);
  * @return {void}
  */
 BambeeLoadDependenciesGenerator.prototype.download = function download() {
-  executeCommand('bundle install', function () {
-    executeCommand('npm install', function () {
-      executeCommand('bower install', function () {
-        var execOptions = {
-          cwd: 'src'
-        };
-        executeCommand('composer install', execOptions, function () {
-          console.log('Bambee WordPress Theme dependencies installed successfully!');
-        });
+  executeCommand('npm install', function () {
+    executeCommand('bower install', function () {
+      var execOptions = {
+        cwd: 'src'
+      };
+      executeCommand('composer install', execOptions, function () {
+        console.log('Bambee WordPress Theme dependencies installed successfully!');
       });
     });
   });
