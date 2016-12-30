@@ -1,6 +1,6 @@
 {
   "name": "generator-bambee",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "A generator for Yeoman to customize the Bambee WordPress Theme.",
   "repository": {
     "type": "git",

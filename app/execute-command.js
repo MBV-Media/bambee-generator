@@ -19,15 +19,26 @@ var exec = require('child_process').exec,
  */
 executeCommand = module.exports = function(cmd, execOptions, cb) {
   console.log('Running "' + cmd + '"...');
-  exec(cmd, execOptions, function(error, stdout, stderr) {
-    if (error) {
-      console.log('"' + cmd + '" failed', error);
-      return console.log(stdout);
-    }
-    console.log('Finished "' + cmd + '"');
-    
+  var child = exec(cmd, execOptions, function(error, stdout, stderr) {
     if (typeof(cb) === 'function') {
       cb();
     }
+  });
+
+  child.stdout.on('data', function(data) {
+    var str = data.toString();
+    str.split(/(\r?\n)/g).forEach(function(line, index) {
+      if(line !== '\n' && line !== '') {
+      console.log(line);
+    }
+    });
+  });
+
+  child.stderr.on('data', function(data) {
+    console.log(data);
+  });
+
+  child.on('close', function(code) {
+    console.log('Finished "' + cmd + '" with code ' + code);
   });
 };
