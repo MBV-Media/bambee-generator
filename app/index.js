@@ -1,6 +1,6 @@
 /**
  * @name generator-bambee
- * @author R4c00n <marcel.kempf93@gmail.com>
+ * @author MBV Media <info@mbv-media.com>
  * @version 1.0.5
  * @license MIT
  * @description
@@ -12,227 +12,377 @@
  */
 'use strict';
 
-var yeoman = require('yeoman-generator'),
-  updateNotifier = require('update-notifier'),
-  pkg = require('../package.json'),
-  notifier = updateNotifier({pkg: pkg}),
-  util = require('util'),
-  _ = require('underscore.string'),
-  yosay = require('yosay'),
-  fs = require('fs'),
-  request = require('request'),
-  admzip = require('adm-zip'),
-  rmdir = require('rimraf'),
-  Replacer = require('./replacer'),
-  executeCommand = require('./execute-command.js'),
-  BambeeGenerator;
+const pkg = require('../package');
+const Generator = require('yeoman-generator');
+const Yosay = require('yosay');
+const Download = require('download');
+const Fs = require('fs');
+const FsExtra = require('fs.extra');
+const UpdateNotifier = require('update-notifier');
+const Notifier = UpdateNotifier({pkg});
+const Spinner = require('cli-spinner').Spinner;
+const _ = require('underscore.string');
+const ExecuteCommand = require('./execute-command.js');
 
+/**
+ *
+ */
+class GeneratorBase extends Generator {
 
-notifier.notify();
-if (notifier.update) {
-  console.log(notifier.update);
+  constructor(args, opts) {
+
+    super(args, opts);
+
+    Notifier.notify();
+
+    this.initOptionDefinitions();
+
+    this.spinner = new Spinner();
+    this.spinner.setSpinnerString('|/-\\');
+
+  }
+
+  /**
+   * @since 0.2.1
+   */
+  initOptionDefinitions() {
+
+    this.optionDefinitions = [
+      {
+        when: (answers) => {
+          return !this.options.themeName;
+        },
+        type: 'input',
+        name: 'themeName',
+        message: 'Enter a theme name',
+        default: 'My Theme Name',
+        help: {
+          desc: '',
+          alias: 't',
+          type: String
+        }
+      },
+      {
+        when: (answers) => {
+          return !this.options.themeDescription;
+        },
+        type: 'input',
+        name: 'themeDescription',
+        message: 'Enter a description for your theme',
+        default: 'Custom WordPress Theme',
+        help: {
+          desc: '',
+          alias: 'd',
+          type: String
+        }
+      },
+      {
+        when: (answers) => {
+          return !this.options.themeUrl;
+        },
+        type: 'input',
+        name: 'themeUrl',
+        message: 'Theme url',
+        default: 'https://github.com/MBV-Media/Wordpress-Theme-Bambee',
+        help: {
+          desc: '',
+          alias: 'T',
+          type: String
+        }
+      },
+      {
+        when: (answers) => {
+          return !this.options.authorName;
+        },
+        type: 'input',
+        name: 'authorName',
+        message: 'Author Name',
+        default: 'MBV Media',
+        store: true,
+        help: {
+          desc: '',
+          alias: 'a',
+          type: String
+        }
+      },
+      {
+        when: (answers) => {
+          return !this.options.authorEmail;
+        },
+        type: 'input',
+        name: 'authorEmail',
+        message: 'Author E-Mail',
+        default: 'info@mbv-meda.com',
+        store: true,
+        help: {
+          desc: '',
+          alias: 'e',
+          type: String
+        }
+      },
+      {
+        when: (answers) => {
+          return !this.options.authorUrl;
+        },
+        type: 'input',
+        name: 'authorUrl',
+        message: 'Author url',
+        default: 'http://mbv-media.com/',
+        store: true,
+        help: {
+          desc: '',
+          alias: 'u',
+          type: String
+        }
+      },
+      {
+        when: (answers) => {
+          return !this.options.license;
+        },
+        type: 'input',
+        name: 'license',
+        message: 'License',
+        default: 'MIT',
+        store: true,
+        help: {
+          desc: '',
+          alias: 'l',
+          type: String
+        }
+      },
+      {
+        when: (answers) => {
+          return !this.options.licenseUri;
+        },
+        type: 'input',
+        name: 'licenseUri',
+        message: 'License URI',
+        default: 'https://opensource.org/licenses/MIT',
+        store: true,
+        help: {
+          desc: '',
+          alias: 'L',
+          type: String
+        }
+      },
+      {
+        when: (answers) => {
+          return !this.options.repositoryType;
+        },
+        type: 'input',
+        name: 'repositoryType',
+        message: 'Repository type',
+        default: 'git',
+        store: true,
+        help: {
+          desc: '',
+          alias: 'r',
+          type: String
+        }
+      },
+      {
+        when: (answers) => {
+          return !this.options.repositoryUrl;
+        },
+        type: 'input',
+        name: 'repositoryUrl',
+        message: 'Repository url',
+        default: 'https://github.com/MBV-Media/Wordpress-Theme-Bambee.git',
+        help: {
+          desc: '',
+          alias: 'R',
+          type: String
+        }
+      }
+    ];
+
+    for(let i in this.optionDefinitions) {
+      let option = this.optionDefinitions[i];
+      this.option(option.name, {
+        desc: option.message,
+        alias: option.help.alias,
+        type: option.help.type
+      });
+    }
+
+  }
+
+  /**
+   *
+   */
+  installTheme() {
+
+    console.log('');
+    // this.spinner.setSpinnerTitle('Installing bambee... %s');
+    // this.spinner.start();
+
+    this.wpContentPath = process.cwd();
+    this.themeSlug = _.camelize(_.slugify(_.humanize(this.options.themeName)));
+    this.themeUrl = 'https://github.com/MBV-Media/Bambee-WordPress-Theme/archive/master.zip';
+    this.themePath = this.wpContentPath + '/' + this.themeSlug;
+
+    let downloadOptions = {
+      extract: true
+    };
+    Download(this.themeUrl, this.wpContentPath, downloadOptions).then(() => {
+      this.finishThemeInstallation();
+    });
+
+  }
+
+  /**
+   *
+   */
+  finishThemeInstallation() {
+
+    try {
+      Fs.renameSync(this.wpContentPath + '/Bambee-Wordpress-Theme-master', this.themePath);
+
+      let packageJsonPath = this.themePath + '/package.json',
+        packageJson = require(packageJsonPath);
+      packageJson.name = this.themeSlug;
+      Fs.writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2), (error) => {
+        if (error) {
+          console.log(error);
+        }
+      });
+
+      this.spinner.stop(true);
+      console.log('bambee installed!');
+
+      this.initializeTheme();
+    }
+    catch (error) {
+      this.onError(error);
+    }
+
+  }
+
+  /**
+   *
+   */
+  initializeTheme() {
+
+    console.log('');
+    console.log('Initializing theme...');
+
+    this.setupStyleCss();
+
+    let execOptions = {
+      cwd: this.themePath
+    };
+
+    this.initializationCount = 0;
+
+    let npmInstall = new ExecuteCommand('npm install', execOptions, () => {
+      this.finishThemeInitialization()
+    });
+    npmInstall.exec();
+
+    let bowerInstall = new ExecuteCommand('bower install', execOptions, () => {
+      this.finishThemeInitialization()
+    });
+    bowerInstall.exec();
+
+    execOptions.cwd = this.themePath + '/src';
+    let composerInstall = new ExecuteCommand('composer install', execOptions, () => {
+      this.finishThemeInitialization()
+    });
+    composerInstall.exec();
+
+  }
+
+  /**
+   *
+   */
+  setupStyleCss() {
+
+    let styleCSS =
+      '/*\n' +
+      'Theme Name: ' + this.options.themeName + '\n' +
+      'Description: ' + this.options.themeDescription + '\n' +
+      'Author: ' + this.options.authorName + '\n' +
+      'Author URI: ' + this.options.authorUrl + '\n' +
+      'Version: 0.0.1\n' +
+      (this.options.license && this.options.license !== 'true' ? 'License: ' + this.options.license + '\n' : '') +
+      (this.options.licenseUri && this.options.licenseUri !== 'true' ? 'License URI: '+ this.options.licenseUri + '\n' : '') +
+      'Text Domain: bambee\n' +
+      '\n' +
+      'Copyright 2018 MBV Media\n' +
+      '*/';
+
+    Fs.writeFile(this.themePath + '/src/style.css', styleCSS, (error) => {
+      if (error) {
+        console.log(error);
+      }
+    });
+
+  }
+
+  /**
+   *
+   */
+  finishThemeInitialization() {
+
+    ++this.initializationCount;
+
+    if (this.initializationCount < 3) {
+      return
+    }
+
+    console.log('\nTheme initialized! You are ready to go.');
+
+  }
+
+  /**
+   *
+   * @param error
+   */
+  onError(error) {
+
+    this.spinner.stop();
+    console.log('\n');
+    console.error(error);
+
+  }
+
 }
 
 /**
- * @class
- * @constructor
- * @augments yeoman.generators.Base
- * @since 1.0.0
- */
-BambeeGenerator = module.exports = function BambeeGenerator(args, options) {
-  var self = this;
-
-  yeoman.generators.Base.apply(this, arguments);
-  console.log(yosay('Hello and welcome to the Bambee WordPress theme generator'));
-
-  this.on('end', function () {
-    var key = null,
-      execOptions;
-
-    // Replace strings in files
-    for (key in self.files) {
-      if (self.files.hasOwnProperty(key)) {
-        self.files[key].replace();
-      }
-    }
-
-    // Execute installation commands
-    execOptions = {
-      cwd: self.siteSlug
-    };
-    executeCommand('npm install', execOptions);
-    executeCommand('bower install', execOptions);
-    execOptions.cwd = self.siteSlug + '/src';
-    executeCommand('composer install', execOptions);
-  });
-};
-util.inherits(BambeeGenerator, yeoman.generators.Base);
-
-/**
- * Ask for configuration properties.
  *
- * @since 1.0.0
- * @return {void}
  */
-BambeeGenerator.prototype.askFor = function askFor() {
-  var cb = this.async();
+class GeneratorBambee extends GeneratorBase {
 
-  var prompts = [
-    {
-      type: 'input',
-      name: 'siteName',
-      message: 'What\'s the name of the site you\'re creating the theme for?',
-      default: 'My Theme Name'
-    },
-    {
-      type: 'input',
-      name: 'description',
-      message: 'Enter a description for your theme',
-      default: 'Custom WordPress Theme'
-    },
-    {
-      type: 'input',
-      name: 'authorName',
-      message: 'Author Name',
-      default: 'MBV-Media'
-    },
-    {
-      type: 'input',
-      name: 'authorEmail',
-      message: 'Author E-Mail',
-      default: 'info@mbv-media.com'
-    },
-    {
-      type: 'input',
-      name: 'license',
-      message: 'License',
-      default: 'MIT'
-    },
-    {
-      type: 'input',
-      name: 'repositoryType',
-      message: 'Repository type',
-      default: 'git'
-    },
-    {
-      type: 'input',
-      name: 'repositoryUrl',
-      message: 'Repository url',
-      default: 'https://github.com/MBV-Media/Bambee-WordPress-Theme'
-    },
-    {
-      type: 'input',
-      name: 'themeUrl',
-      message: 'Theme url',
-      default: 'https://github.com/MBV-Media/Bambee-WordPress-Theme'
-    },
-    {
-      type: 'input',
-      name: 'authorUrl',
-      message: 'Author url',
-      default: 'http://mbv-media.com/'
-    }
-  ];
+  /**
+   *
+   * @param args
+   * @param opts
+   */
+  constructor(args, opts) {
 
-  this.prompt(prompts, function (props) {
-    this.siteName = props.siteName;
-    this.siteSlug = _.camelize(_.slugify(_.humanize(this.siteName)));
-    this.description = props.description;
-    this.author = props.authorName + ' <' + props.authorEmail + '>';
-    this.license = props.license;
-    this.repositoryType = props.repositoryType;
-    this.repositoryUrl = props.repositoryUrl;
-    this.themeUrl = props.themeUrl;
-    this.authorUrl = props.authorUrl;
+    super(args, opts);
 
-    this.files = {
-      package: new Replacer(this.siteSlug + '/package.json', this),
-      styleSCSS: new Replacer(this.siteSlug + '/src/style.scss', this)
-    };
-    cb();
-  }.bind(this));
-};
+  }
 
-/**
- * Download and unzip the Bambee WordPress theme from GitHub.
- *
- * @since 1.0.0
- * @return {void}
- */
-BambeeGenerator.prototype.download = function download() {
-  var cb = this.async(),
-    self = this;
+  /**
+   *
+   * @returns {PromiseLike<T> | Promise<T>}
+   */
+  prompting() {
 
-  console.log('Downloading the Bambee WordPress Theme...');
-  request('https://github.com/MBV-Media/Bambee-WordPress-Theme/archive/master.zip')
-    .pipe(fs.createWriteStream('plugin.zip'))
-    .on('close', function () {
-      var zip = new admzip('./plugin.zip');
+    console.log(Yosay('Hello and welcome to the Bambee WordPress theme generator'));
 
-      console.log('File downloaded!');
-      zip.extractAllTo('theme_temp', true);
-      fs.rename('./theme_temp/Bambee-WordPress-Theme-master/', './' + self.siteSlug, function () {
-        rmdir('theme_temp', function (error) {
-          if (error) {
-            console.log(error);
-          }
-          cb();
-        });
-      });
-      fs.unlink('plugin.zip');
+    return this.prompt(this.optionDefinitions).then((answers) => {
+      Object.assign(this.options, answers);
+      this.installTheme();
     });
-};
+
+  }
+
+}
 
 /**
- * Replace strings inside the package.json file.
  *
- * @since 1.0.0
- * @return {void}
+ * @type {module.exports}
  */
-BambeeGenerator.prototype.setPackage = function setPackage() {
-  var packageJSON = this.files.package;
-
-  packageJSON.add(
-    /\"name\"\: \"Bambee\"/,
-    '"name": "' + this.siteSlug + '"'
-  );
-  packageJSON.add(
-    /\"description\"\: \"Boilerplate for WordPress theme developement.\"/,
-    '"description": "' + this.description + '"'
-  );
-  packageJSON.add(
-    /\"type\"\: \"git\"/,
-    '"type": "' + this.repositoryType + '"'
-  );
-  packageJSON.add(
-    /\"url\"\: \"https:\/\/github.com\/MBV-Media\/Bambee\-WordPress\-Theme\"/,
-    '"url": "' + this.repositoryUrl + '"'
-  );
-  packageJSON.add(
-    /\"author\"\: \"MBV-Media <info@mbv-media.com>\"/,
-    '"author": "' + this.author + '"'
-  );
-  packageJSON.add(
-    /\"license\"\: \"MIT\"/,
-    '"license": "' + this.license + '"'
-  );
-};
-
-/**
- * Replace strings inside the style.scss file.
- *
- * @since 1.0.0
- * @return {void}
- */
-BambeeGenerator.prototype.setStyleSCSS = function setStyleSCSS() {
-  var packageJSON = this.files.styleSCSS;
-
-  packageJSON.add(
-    /Theme URI\: https\:\/\/github.com\/MBV-Media\/Bambee\-WordPress\-Theme/,
-    'Theme URI: ' + this.themeUrl
-  );
-  packageJSON.add(
-    /Author URI\: http:\/\/mbv\-media.com\//,
-    'Author URI: ' + this.authorUrl
-  );
-};
+module.exports = GeneratorBambee;

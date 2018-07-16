@@ -27,7 +27,7 @@ $ npm install -g generator-bambee
 
 **Install Bambee WordPress theme the first time:**
 ```
-# Go to the wp-content directory of your WordPress
+# Go to the wp-content directory of your WordPress installation
 cd wp-content
 # Run the generator
 $ yo bambee
@@ -35,10 +35,10 @@ $ yo bambee
 
 **Load dependencies (execute installation commands) of an existing Bambee WordPress theme:**
 ```
-# Go to the wp-content directory of your WordPress
-cd wp-content
-# RUn the generator sub-command
-yo bambee:loadDependencies
+# Go to the direcotry of your bambee-theme installation
+cd wp-content/<theme-name>
+# Run the generator sub-command
+yo bambee:init
 ```
 
 ### Getting To Know Yeoman
